@@ -1,0 +1,18 @@
+Individual Reflection
+CPT 201: Automation and Scripting for Cybersecurity and Physical Threat Detection
+Keegan Windley | April 2026
+================================================================================
+
+        Working on this project reinforced how automation transforms security
+analysis from a reactive, manual process into a proactive and scalable
+practice. Building the PowerShell collection stage required me to think
+carefully about real-world edge cases - remote endpoints where WinRM is
+disabled, logs with no events, and accounts whose names do not appear cleanly
+in event messages. Handling those cases gracefully, rather than letting the
+script crash, made the tool genuinely reliable. Connecting the PowerShell
+output to the Python reporting stage deepened my understanding of how
+individual tools become more powerful when designed to work together as a
+pipeline. This project also made the ethical dimensions of log analysis
+concrete for me: the same script that defends a network could violate privacy
+if deployed without authorization, so building responsibly matters as much as
+building effectively.

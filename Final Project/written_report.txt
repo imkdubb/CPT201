@@ -1,0 +1,244 @@
+================================================================================
+FORMATTING NOTES FOR WORD SUBMISSION:
+  - Font: Times New Roman, 12pt
+  - Margins: 1 inch on all sides
+  - Spacing: Double-spaced throughout (including references)
+  - Paragraph indent: 0.5 inch (first line of each paragraph)
+  - Title page: no page number or running head required (APA 7th, student)
+  - Page numbers: top-right header, beginning on page 2
+================================================================================
+
+
+                    ---- TITLE PAGE ----
+
+[Title in bold, centered]
+
+Automated Brute-Force Threat Detection and Log Analysis:
+A PowerShell and Python Automation Pipeline
+
+[Space between title and remaining information]
+
+Keegan Windley
+Delaura Ohave
+
+The University of Arizona Global Campus
+
+CPT 201: Automation and Scripting for Cybersecurity and Physical
+Threat Detection
+
+Professor Hisako Sato
+
+April 20, 2026
+
+
+================================================================================
+
+
+                    ---- PAGE 2 (begin page numbering here) ----
+
+
+Automated Brute-Force Threat Detection and Log Analysis:
+A PowerShell and Python Automation Pipeline
+
+
+Introduction
+
+        Credential-based attacks remain among the most persistent and damaging
+threats facing modern organizations. Techniques such as brute-force login
+attempts, password spraying, Kerberos pre-authentication abuse, and the reuse
+of stolen credentials through pass-the-hash exploitation are consistently
+documented as primary initial-access vectors in enterprise breach reports.
+Traditional approaches require security analysts to manually sift through
+thousands of Windows Security event log entries, a process that is slow,
+error-prone, and unable to provide the near-real-time awareness necessary for
+effective incident response. Automation of routine log collection and analysis
+represents a practical solution: properly designed scripts can surface
+meaningful threat signals rapidly, reduce cognitive load on analysts, and
+produce standardized outputs compatible with security information and event
+management (SIEM) platforms. This paper presents the design, development,
+testing, and ethical evaluation of a two-stage automated pipeline that
+collects and risk-scores Windows Security authentication events using
+PowerShell before aggregating findings and generating analyst-ready reports
+through Python, demonstrating that targeted scripting automation can
+meaningfully improve a blue team's capacity for early threat detection.
+
+
+Purpose and Objectives
+
+        The primary objective of this project is to automate the detection of
+credential-based attack patterns in Windows Security event logs without
+requiring continuous manual analyst intervention. The automation pipeline
+targets five specific Windows Security event identifiers: event 4625 (failed
+logon), event 4648 (logon using explicit credentials, a known pass-the-hash
+indicator), event 4771 (Kerberos pre-authentication failure, associated with
+Kerberos brute-force campaigns), event 4776 (NTLM credential validation by
+a domain controller), and event 4740 (user account lockout). Together, these
+events represent the most common observable signatures of active
+credential-based intrusion attempts.
+
+        Secondary objectives include producing outputs in both human-readable
+and machine-readable formats so that findings can be consumed by analyst
+dashboards and ingested by SIEM platforms alike, demonstrating graceful error
+handling for environments where Windows Remote Management (WinRM) is not
+universally enabled, and ensuring that all components of the pipeline comply
+with applicable ethical and legal frameworks including NIST SP 800-53, the
+General Data Protection Regulation (GDPR), and the Health Insurance
+Portability and Accountability Act (HIPAA) Security Rule.
+
+
+Design and Scripting Details
+
+        The pipeline is organized into two stages. Stage one is implemented in
+PowerShell and is contained in a single parameterized script named
+threat_detector.ps1. The script accepts configurable parameters for the target
+machine name, a look-back window measured in days, an event retrieval cap, and
+a brute-force failure threshold that controls when an account is classified as
+HIGH risk. When targeting the local machine, the script calls Get-WinEvent
+directly. When a remote hostname is supplied, it opens a PowerShell Remoting
+session via Invoke-Command; if that session fails due to a transport exception
+(such as WinRM being disabled on the target), the script automatically falls
+back to querying the local Security log and notifies the analyst of the
+fallback. This design ensures the script degrades gracefully rather than
+terminating unexpectedly.
+
+        After raw events are retrieved, each WinEvent object is parsed to
+extract a username from the event message body using a regular expression
+match against the "Account Name:" field present in most Security log entries.
+Placeholder values, empty strings, and machine account names (which end in "$")
+are discarded, and accounts not found in the message default to "N/A." Each
+record is then labeled with a human-readable event type and an initial risk
+value of PENDING. Risk scoring is applied as a post-processing step: the script
+tallies authentication failures per account across event IDs 4625 and 4771.
+Accounts with five or more failures within the look-back window are classified
+HIGH, those with three to four failures are classified MEDIUM, and those with
+fewer than three are classified LOW. Account lockout events (4740) are
+unconditionally classified HIGH because a lockout confirms that an active
+attack sequence has already reached its threshold. Explicit-credential logons
+(4648) are classified MEDIUM because they frequently indicate stolen credential
+reuse rather than standard authentication behavior. The enriched records are
+exported to a structured CSV file that serves as the handoff artifact between
+the two stages.
+
+        Stage two is implemented in Python and contained in analyze_threats.py.
+The script reads the Stage one CSV, aggregates event counts by type and by risk
+level, accumulates per-account failure totals, and determines an overall risk
+classification for the entire analysis window. If the optional psutil library
+is installed, the script also collects a live snapshot of CPU utilization and
+RAM usage from the analyst workstation as contextual metadata. The script
+renders a fully self-contained HTML dashboard and writes a compact JSON summary
+structured for SIEM ingestion. All user-supplied data inserted into the HTML
+output is passed through Python's built-in html.escape() function before
+rendering, which eliminates the risk of cross-site scripting (XSS)
+vulnerabilities if the report is later served through a web interface, directly
+addressing OWASP Top 10 category A03 (Injection). Script exit codes of 0, 1,
+and 2 correspond to LOW, HIGH, and CRITICAL overall risk classifications
+respectively, enabling automated orchestration tools and CI/CD pipelines to act
+programmatically on detected threat severity.
+
+        A built-in demonstration mode, activated by the -Demo flag in Stage
+one, injects twelve synthetic events covering all five monitored event IDs.
+This allows the full pipeline to be exercised and demonstrated in any
+environment without requiring access to a production Security event log or
+elevated permissions.
+
+
+Testing Results and Troubleshooting
+
+        Testing was conducted across three distinct scenarios. In the first
+scenario, the demonstration mode was used to validate the full pipeline end to
+end. The twelve synthetic events were correctly processed and exported to CSV;
+the Python analyzer read the CSV and produced an overall classification of HIGH.
+The account "administrator" was correctly flagged as HIGH based on six failed
+logon events, the account "jdoe" was classified MEDIUM based on three Kerberos
+pre-authentication failures, and the account lockout for "svcbackup" triggered
+a separate HIGH alert banner in the HTML report. All event type counts in the
+console summary matched the injected data exactly.
+
+        In the second scenario, the script was run against the local Security
+log over a seven-day window on a development workstation that had no
+authentication failures during that period. The script returned zero events and
+exited cleanly with an informational message, confirming that the zero-results
+path does not produce an error or an unhandled exception.
+
+        In the third scenario, an unreachable hostname was supplied to the
+-RemoteComputer parameter. The script triggered the
+PSRemotingTransportException catch block, printed a clear diagnostic message
+instructing the analyst how to enable WinRM on the target, and fell back to
+querying the local Security log without any additional user action. On the
+Python side, deleting the CSV file before running analyze_threats.py confirmed
+that the file-not-found path displays clear setup instructions and exits with
+code 1 rather than raising an unhandled exception.
+
+
+Ethical and Compliance Considerations
+
+        Deploying automated log collection tools carries significant legal and
+ethical responsibilities that must be addressed alongside the technical design.
+NIST SP 800-53, Revision 5, defines the Audit and Accountability (AU) and
+System and Information Integrity (SI) control families that govern log
+collection in federal and federally regulated environments (Joint Task Force,
+2020). The AU-2 control requires organizations to define which events are
+audited; the AU-6 control requires review of audit records for anomalies; the
+SI-4 control requires continuous system monitoring. The pipeline directly
+supports all three controls by automating event collection and anomaly
+detection.
+
+        From a data privacy perspective, authentication event logs contain
+personal data because usernames are often tied to identifiable natural persons.
+Under the GDPR, personal data may only be processed when a lawful basis exists,
+the purpose is documented, and the data is not retained longer than necessary
+(Kent & Souppaya, 2006). In healthcare environments subject to HIPAA, the
+Security Rule requires audit controls under §164.312(b) and access controls
+under §164.312(a), both of which this pipeline directly supports. Any
+organizational deployment must be accompanied by a documented data retention
+policy, explicit written authorization from data governance leadership, and
+notification to employees that authentication activity is subject to automated
+monitoring (Kent & Souppaya, 2006).
+
+        The principle of least privilege is enforced by design: the Security
+event log requires Event Log Readers group membership rather than Local
+Administrator rights, and the scripts store no credentials internally. Every
+run should be logged, timestamped, and auditable by security leadership.
+Organizations must recognize that the same analytical capabilities that enable
+blue-team defense can be misused if deployed without proper authorization
+processes and oversight.
+
+
+Conclusion
+
+        This project demonstrates that a targeted two-stage automation pipeline
+combining PowerShell for data collection and risk scoring with Python for
+aggregation and reporting can meaningfully reduce the manual burden of security
+log analysis while maintaining compliance with major regulatory frameworks. The
+pipeline correctly identifies high-frequency authentication failures, account
+lockouts, and suspicious credential reuse patterns, classifies accounts by risk
+level, and delivers findings in both analyst-readable and machine-ingestible
+formats. Error handling is built into every path so that the pipeline degrades
+gracefully in environments with incomplete WinRM configuration or missing
+dependencies. Future enhancements including real-time alerting via webhook
+integration, rolling statistical baseline detection, and extension to Linux
+auditd log formats would further increase the operational value of this
+approach for blue teams managing heterogeneous enterprise environments.
+
+
+================================================================================
+
+References
+
+[Center this heading; references list is double-spaced with hanging indent]
+
+Joint Task Force. (2020). Security and privacy controls for information
+        systems and organizations (NIST Special Publication 800-53, Rev. 5).
+        National Institute of Standards and Technology.
+        https://doi.org/10.6028/NIST.SP.800-53r5
+
+Kent, K., & Souppaya, M. (2006). Guide to computer security log management
+        (NIST Special Publication 800-92). National Institute of Standards
+        and Technology. https://doi.org/10.6028/NIST.SP.800-92
+
+Sommer, R., & Paxson, V. (2010). Outside the closed world: On using machine
+        learning for network intrusion detection. In Proceedings of the 2010
+        IEEE Symposium on Security and Privacy (pp. 305-316). IEEE.
+        https://doi.org/10.1109/SP.2010.25
+
+================================================================================

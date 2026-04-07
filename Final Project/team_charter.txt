@@ -1,0 +1,111 @@
+================================================================================
+                              TEAM CHARTER
+         CPT 201: Automation and Scripting for Cybersecurity and Physical
+                             Threat Detection
+                  The University of Arizona Global Campus
+                              April 2026
+================================================================================
+
+
+TEAM NAME
+---------
+Blue Team Automation Group
+
+
+TEAM MEMBERS AND ROLES
+-----------------------
+Keegan Windley
+  Role: Lead Script Developer
+  Responsibilities: PowerShell scripting (threat_detector.ps1), system
+  integration testing, GitHub repository management, and primary code review.
+
+Delaura Ohave
+  Role: Python Developer and Documentation Lead
+  Responsibilities: Python scripting (analyze_threats.py), written report
+  drafting, APA formatting, and peer review of all deliverables.
+
+
+PROJECT MISSION STATEMENT
+--------------------------
+Our mission is to design, develop, and validate an automated cybersecurity
+pipeline that detects credential-based attacks in Windows Security event logs,
+reduces manual analyst workload, and produces actionable threat intelligence
+reports in compliance with NIST SP 800-53, GDPR, and HIPAA requirements.
+
+
+TEAM GOALS
+----------
+1. Deliver working, tested automation scripts (PowerShell and Python) by the
+   final project deadline.
+2. Produce a professional written report and presentation that accurately
+   reflect the technical work completed.
+3. Maintain clear, respectful communication throughout the project.
+4. Ensure all code and documentation meets ethical and compliance standards.
+5. Submit all deliverables on time with both team members contributing equally.
+
+
+COMMUNICATION PLAN
+------------------
+Primary Channel  : Discord (daily check-ins)
+Secondary Channel: Email for formal file sharing and assignment submissions
+Response Time    : Team members agree to respond to messages within 24 hours
+Meetings         : Virtual via Discord voice, scheduled at least twice per week
+Meeting Notes    : Responsibility rotates each session; notes stored in shared
+                   Google Drive folder
+
+
+DIVISION OF WORK
+----------------
+PowerShell Script Development  : Keegan Windley
+Python Script Development      : Delaura Ohave
+Pseudocode / Workflow Design   : Joint responsibility
+Written Report (draft)         : Delaura Ohave
+Written Report (review/edit)   : Keegan Windley
+Presentation Slides            : Joint responsibility
+Individual Reflections         : Each member independently
+GitHub Repository Management   : Keegan Windley
+
+
+DECISION-MAKING POLICY
+-----------------------
+Decisions will be made by mutual agreement. If the team cannot reach consensus
+on a technical or creative direction within one discussion session, the team
+member whose primary area of responsibility the decision falls under will make
+the final call. All significant decisions will be logged in our shared notes.
+
+
+CONFLICT RESOLUTION
+-------------------
+1. Raise the concern directly and respectfully in a private team message first.
+2. If unresolved within 48 hours, bring the issue to a team meeting for open
+   discussion.
+3. If still unresolved, escalate to the course instructor for guidance.
+We commit to addressing disagreements professionally and without personal
+criticism.
+
+
+ACADEMIC INTEGRITY COMMITMENT
+------------------------------
+All team members agree to uphold the academic honesty policies of the
+University of Arizona Global Campus. All submitted work will be original, and
+any external sources used will be properly cited in APA format. Team members
+will not misrepresent individual contributions.
+
+
+PARTICIPATION AND ACCOUNTABILITY
+---------------------------------
+If a team member is unable to complete an assigned task by the agreed internal
+deadline, they will notify the team at least 48 hours in advance so
+responsibilities can be redistributed without jeopardizing the submission
+deadline.
+
+
+SIGNATURES (Electronic Agreement)
+----------------------------------
+By beginning work on the project, both team members acknowledge agreement
+with all terms and responsibilities outlined in this charter.
+
+Keegan Windley          Date: April 2026
+Delaura Ohave           Date: April 2026
+
+================================================================================
