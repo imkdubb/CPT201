@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-04-07 14:54:39",
+  "total_events": 12,
+  "overall_risk": "HIGH",
+  "events_by_type": {
+    "Failed Logon": 6,
+    "Explicit Credential Logon": 1,
+    "Kerberos Pre-Auth Failed": 3,
+    "Account Lockout": 1,
+    "Credential Validation": 1
+  },
+  "events_by_risk": {
+    "HIGH": 7,
+    "MEDIUM": 4,
+    "LOW": 1
+  },
+  "at_risk_users": {
+    "administrator": {
+      "failure_count": 6,
+      "risk": "HIGH"
+    },
+    "jdoe": {
+      "failure_count": 3,
+      "risk": "MEDIUM"
+    }
+  },
+  "lockout_users": [
+    "svcbackup"
+  ],
+  "explicit_cred_users": [
+    "jsmith"
+  ],
+  "system_snapshot": {
+    "cpu_percent": "1.9%",
+    "ram_used_gb": "25.33 GB",
+    "ram_total_gb": "61.56 GB",
+    "ram_percent": "41.2%"
+  }
+}

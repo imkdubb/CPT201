@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Threat Detection Report - CPT201</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body   { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; color: #e0e0e0; }
+    header { background: #16213e; padding: 22px 32px; border-bottom: 4px solid #c0392b; }
+    header h1  { font-size: 1.55em; color: #fff; }
+    .subtitle  { color: #90a4ae; font-size: 0.88em; margin-top: 4px; }
+    .container { max-width: 1100px; margin: 28px auto; padding: 0 24px; }
+    .card      { background: #16213e; border-radius: 8px; padding: 22px;
+                  margin-bottom: 22px; border-left: 4px solid #c0392b; }
+    .card h2   { font-size: 1em; color: #64b5f6; margin-bottom: 14px;
+                  text-transform: uppercase; letter-spacing: .05em; }
+    .overall   { font-size: 2.2em; font-weight: 700; color: #c0392b; }
+    .meta      { color: #90a4ae; margin-top: 6px; font-size: 0.9em; }
+    table      { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+    th         { background: #0f3460; padding: 9px 14px; text-align: left;
+                  color: #90caf9; font-weight: 600; }
+    td         { padding: 8px 14px; border-bottom: 1px solid #263160; }
+    tr:hover td { background: #1e2d5a; }
+    .alert     { padding: 12px 18px; border-radius: 6px; margin-bottom: 12px;
+                  font-size: 0.92em; }
+    .alert.high   { background: #3d0a0a; border-left: 4px solid #c0392b; }
+    .alert.medium { background: #3d1f00; border-left: 4px solid #e67e22; }
+    footer     { text-align: center; padding: 24px; color: #455a64; font-size: 0.8em; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Automated Threat Detection Report</h1>
+  <div class="subtitle">CPT201 Final Project &nbsp;|&nbsp; Generated: 2026-04-07 14:54:39</div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>Overall Risk Assessment</h2>
+    <div class="overall">HIGH</div>
+    <div class="meta">Total events analysed: <strong>12</strong></div>
+  </div>
+
+  <div class="alert high"><strong>&#9888; Account Lockout(s) Detected:</strong> svcbackup</div><div class="alert medium"><strong>&#9888; Explicit-Credential Logon(s):</strong> jsmith - verify these are authorized.</div>
+
+  <div class="card">
+    <h2>Event Type Breakdown</h2>
+    <table>
+      <tr><th>Event Type</th><th>Count</th></tr>
+      <tr><td>Failed Logon</td><td>6</td></tr><tr><td>Kerberos Pre-Auth Failed</td><td>3</td></tr><tr><td>Explicit Credential Logon</td><td>1</td></tr><tr><td>Account Lockout</td><td>1</td></tr><tr><td>Credential Validation</td><td>1</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>At-Risk Accounts</h2>
+    <table>
+      <tr><th>Username</th><th>Failed Attempts</th><th>Risk Level</th></tr>
+      <tr><td>administrator</td><td>6</td><td><span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">HIGH</span></td></tr><tr><td>jdoe</td><td>3</td><td><span style="background:#e67e22;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">MEDIUM</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Event Log &ndash; Most Recent 50 Records</h2>
+    <table>
+      <tr><th>Timestamp</th><th>User</th><th>Event ID</th><th>Type</th><th>Risk</th></tr>
+      <tr><td>2026-04-07 14:44:36</td><td>administrator</td><td>4625</td><td>Failed Logon</td><td><span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">HIGH</span></td></tr><tr><td>2026-04-07 14:42:36</td><td>administrator</td><td>4625</td><td>Failed Logon</td><td><span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">HIGH</span></td></tr><tr><td>2026-04-07 14:40:36</td><td>administrator</td><td>4625</td><td>Failed Logon</td><td><span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">HIGH</span></td></tr><tr><td>2026-04-07 14:38:36</td><td>administrator</td><td>4625</td><td>Failed Logon</td><td><span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">HIGH</span></td></tr><tr><td>2026-04-07 14:36:36</td><td>administrator</td><td>4625</td><td>Failed Logon</td><td><span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">HIGH</span></td></tr><tr><td>2026-04-07 14:34:36</td><td>administrator</td><td>4625</td><td>Failed Logon</td><td><span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">HIGH</span></td></tr><tr><td>2026-04-07 12:54:36</td><td>jsmith</td><td>4648</td><td>Explicit Credential Logon</td><td><span style="background:#e67e22;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">MEDIUM</span></td></tr><tr><td>2026-04-07 11:54:36</td><td>jdoe</td><td>4771</td><td>Kerberos Pre-Auth Failed</td><td><span style="background:#e67e22;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">MEDIUM</span></td></tr><tr><td>2026-04-07 11:52:36</td><td>jdoe</td><td>4771</td><td>Kerberos Pre-Auth Failed</td><td><span style="background:#e67e22;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">MEDIUM</span></td></tr><tr><td>2026-04-07 11:50:36</td><td>jdoe</td><td>4771</td><td>Kerberos Pre-Auth Failed</td><td><span style="background:#e67e22;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">MEDIUM</span></td></tr><tr><td>2026-04-07 11:48:36</td><td>svcbackup</td><td>4740</td><td>Account Lockout</td><td><span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">HIGH</span></td></tr><tr><td>2026-04-07 09:54:36</td><td>N/A</td><td>4776</td><td>Credential Validation</td><td><span style="background:#27ae60;color:#fff;padding:2px 10px;border-radius:4px;font-size:0.82em;font-weight:bold">LOW</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>System Snapshot (Analysis Host)</h2>
+    <table>
+      <tr><th>Metric</th><th>Value</th></tr>
+      <tr><td>cpu_percent</td><td>1.9%</td></tr><tr><td>ram_used_gb</td><td>25.33 GB</td></tr><tr><td>ram_total_gb</td><td>61.56 GB</td></tr><tr><td>ram_percent</td><td>41.2%</td></tr>
+    </table>
+  </div>
+
+</div>
+<footer>CPT201 &ndash; Automated Cybersecurity Threat Detection &amp; Log Analysis &nbsp;|&nbsp; April 2026</footer>
+</body>
+</html>

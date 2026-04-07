@@ -1,0 +1,308 @@
+AUTOMATED BRUTE-FORCE THREAT DETECTION & LOG ANALYSIS
+CPT201 Final Project  |  Keegan  |  April 2026
+======================================================
+WORKFLOW PSEUDOCODE & DATA FLOW
+======================================================
+
+PURPOSE
+-------
+Detect credential-based attacks (brute-force, password spray,
+pass-the-hash, account lockout) in Windows Security event logs,
+classify accounts by risk level, and deliver a human-readable
+HTML report and machine-readable JSON summary.
+
+======================================================
+TOP-LEVEL DATA FLOW
+======================================================
+
+  [Windows Security Event Log]
+            |
+            v
+  [STAGE 1: threat_detector.ps1]
+     - Collect authentication events
+     - Parse & enrich each record
+     - Apply per-account risk scoring
+            |
+            v
+  [security_events.csv]
+            |
+            v
+  [STAGE 2: analyze_threats.py]
+     - Aggregate statistics
+     - Classify overall risk
+     - Collect system snapshot
+        /           \
+       v             v
+  [threat_report.html]  [threat_summary.json]
+
+
+======================================================
+STAGE 1  |  threat_detector.ps1  (PowerShell)
+======================================================
+
+INPUT PARAMETERS
+----------------
+  RemoteComputer      : hostname or IP (default = local machine)
+  DaysBack            : look-back window in days (default = 7)
+  MaxEvents           : event retrieval cap (default = 2000)
+  BruteForceThreshold : failures triggering HIGH risk (default = 5)
+  -Demo               : flag to inject synthetic events (no log needed)
+
+MONITORED EVENT IDs
+-------------------
+  4625  Failed logon
+  4648  Logon using explicit credentials (pass-the-hash indicator)
+  4771  Kerberos pre-authentication failure
+  4776  NTLM credential validation by domain controller
+  4740  User account lockout
+
+PSEUDOCODE
+----------
+BEGIN threat_detector
+
+  PRINT banner with configuration values
+
+  IF Demo flag is set THEN
+      Generate a hardcoded list of synthetic event objects
+      covering all five monitored Event IDs and known-bad patterns
+      SET Records = synthetic list
+  ELSE
+      SET filter = { LogName: Security, Id: MonitoredIDs, StartTime: Now - DaysBack }
+
+      IF RemoteComputer is local machine THEN
+          RawEvents = Get-WinEvent(filter, MaxEvents)
+
+      ELSE
+          TRY
+              Open PS-Remoting session to RemoteComputer
+              RawEvents = Invoke-Command { Get-WinEvent(filter, MaxEvents) }
+          CATCH PSRemotingTransportException
+              PRINT remoting failure message
+              PRINT hint to enable WinRM
+              FALLBACK: RawEvents = Get-WinEvent(filter, MaxEvents) on local machine
+          END TRY
+      END IF
+
+      IF RawEvents is empty THEN
+          PRINT informational warning
+          EXIT 0
+      END IF
+
+      FOR each RawEvent IN RawEvents
+          Record = {
+              Timestamp : event.TimeCreated formatted as "yyyy-MM-dd HH:mm:ss"
+              User      : extract first "Account Name: <value>" from message
+                          skip placeholders ("-", "", machine accounts ending in "$")
+                          default to "N/A" if not found
+              EventID   : event.Id
+              EventType : map EventID to human-readable label
+              Message   : strip newlines, truncate to 300 chars
+              Risk      : "PENDING"  (filled in scoring step)
+          }
+          APPEND Record to Records
+      END FOR
+  END IF
+
+  // Risk scoring (runs for both Demo and real paths)
+  FailureCounts = empty hashtable
+
+  FOR each Record IN Records WHERE EventID IN {4625, 4771} AND User != "N/A"
+      FailureCounts[Record.User] += 1
+  END FOR
+
+  UserRisk = empty hashtable
+  FOR each (User, Count) IN FailureCounts
+      IF Count >= BruteForceThreshold  THEN  UserRisk[User] = "HIGH"
+      ELSE IF Count >= 3               THEN  UserRisk[User] = "MEDIUM"
+      ELSE                                   UserRisk[User] = "LOW"
+  END FOR
+
+  FOR each Record IN Records
+      IF UserRisk contains Record.User THEN
+          Record.Risk = UserRisk[Record.User]
+      ELSE IF Record.EventID == 4740 THEN
+          Record.Risk = "HIGH"      // lockouts always critical
+      ELSE IF Record.EventID == 4648 THEN
+          Record.Risk = "MEDIUM"    // explicit-credential logons are notable
+      ELSE
+          Record.Risk = "LOW"
+      END IF
+  END FOR
+
+  Records = SORT Records BY Timestamp DESCENDING
+  EXPORT Records TO CSV at OutputPath
+
+  PRINT event type breakdown (grouped counts)
+  PRINT risk level distribution
+  IF any HIGH-risk users THEN PRINT alert list
+  PRINT "Next step: python analyze_threats.py"
+
+END threat_detector
+
+
+OUTPUT
+------
+  security_events.csv
+  Columns: Timestamp, User, EventID, EventType, Message, Risk
+
+
+ERROR HANDLING (Stage 1)
+------------------------
+  PS Remoting fails           → graceful fallback to local log query
+  No events found             → informational message, EXIT 0 (not an error)
+  Get-WinEvent access denied  → warning message, empty result set
+  Unexpected exception        → CATCH general exception, print message, EXIT 1
+
+
+======================================================
+STAGE 2  |  analyze_threats.py  (Python)
+======================================================
+
+INPUT
+-----
+  security_events.csv  (produced by Stage 1)
+  Optional: path override via command-line argument
+
+PSEUDOCODE
+----------
+BEGIN analyze_threats
+
+  csv_path = argv[1] if provided ELSE default path
+
+  PRINT status message
+
+  TRY load records from csv_path
+      IF file does not exist THEN
+          PRINT setup instructions
+          EXIT 1
+      END IF
+      IF file is empty THEN
+          PRINT warning
+          EXIT 1
+      END IF
+  END TRY
+
+  // Aggregation
+  events_by_type     = Counter()
+  events_by_risk     = Counter()
+  failures_per_user  = defaultdict(int)
+  lockout_users      = []
+  explicit_cred_users = []
+
+  FOR each record IN records
+      events_by_type[record.EventType] += 1
+      events_by_risk[record.Risk]      += 1
+
+      IF record.EventID IN {4625, 4771} AND User is not "N/A" THEN
+          failures_per_user[record.User] += 1
+      END IF
+      IF record.EventID == 4740 AND User is not "N/A" THEN
+          APPEND User to lockout_users
+      END IF
+      IF record.EventID == 4648 AND User is not "N/A" THEN
+          APPEND User to explicit_cred_users
+      END IF
+  END FOR
+
+  // Per-user classification
+  at_risk_users = {}
+  FOR each (user, count) IN failures_per_user
+      IF count >= 5  THEN  level = "HIGH"
+      ELSE IF count >= 3  THEN  level = "MEDIUM"
+      ELSE                     level = "LOW"
+      at_risk_users[user] = { failure_count: count, risk: level }
+  END FOR
+
+  // Overall risk determination
+  has_high   = any(user.risk == "HIGH"   for user in at_risk_users)
+  has_medium = any(user.risk == "MEDIUM" for user in at_risk_users)
+
+  IF has_high OR lockout_users is not empty  THEN  overall = "HIGH"
+  ELSE IF has_medium OR explicit_cred_users  THEN  overall = "MEDIUM"
+  ELSE IF total_records > 0                  THEN  overall = "LOW"
+  ELSE                                             overall = "NONE"
+
+  analysis = {
+      generated_at, total_events, overall_risk,
+      events_by_type, events_by_risk,
+      at_risk_users, lockout_users, explicit_cred_users
+  }
+
+  // System snapshot
+  IF psutil is available THEN
+      snapshot = { cpu_percent, ram_used_gb, ram_total_gb, ram_percent }
+  ELSE
+      snapshot = { note: "psutil not installed" }
+  END IF
+
+  PRINT console summary (overall risk, event types, at-risk users)
+
+  html_content = build_html(analysis, snapshot, records)
+  WRITE html_content to threat_report.html
+  PRINT "[+] HTML report saved"
+
+  json_payload = merge(analysis, snapshot)
+  WRITE json_payload to threat_summary.json
+  PRINT "[+] JSON summary saved"
+
+  // Pipeline-friendly exit codes
+  IF overall == "CRITICAL"  THEN  EXIT 2
+  ELSE IF overall == "HIGH" THEN  EXIT 1
+  ELSE                            EXIT 0
+
+END analyze_threats
+
+
+HTML REPORT SECTIONS
+--------------------
+  1. Overall risk banner       (color-coded by risk level)
+  2. Alert banners             (lockouts, explicit-credential logons)
+  3. Event Type Breakdown      (table sorted by count descending)
+  4. At-Risk Accounts          (table sorted by failure count descending)
+  5. Event Log (top 50 rows)   (Timestamp, User, EventID, Type, Risk)
+  6. System Snapshot           (CPU %, RAM used/total)
+
+SECURITY NOTE (HTML GENERATION)
+--------------------------------
+  ALL user-supplied data inserted into the HTML template is passed
+  through Python's html.escape() to prevent cross-site scripting (XSS)
+  if the report is served via a web interface.
+  This satisfies OWASP Top 10 A03 (Injection).
+
+
+OUTPUT
+------
+  threat_report.html   - analyst-facing dashboard
+  threat_summary.json  - SIEM-ingestible summary
+  Exit codes: 0 = LOW/NONE, 1 = HIGH, 2 = CRITICAL
+
+
+ERROR HANDLING (Stage 2)
+------------------------
+  CSV file missing     → instructions printed, EXIT 1
+  CSV file empty       → warning printed, EXIT 1
+  psutil not installed → "note" field in snapshot, continues normally
+  Unexpected exception → propagates to caller with traceback
+
+
+======================================================
+FULL END-TO-END EXECUTION SEQUENCE
+======================================================
+
+  STEP 1  Run threat_detector.ps1
+          (with -Demo for lab testing, or real target for production)
+
+          Example: .\threat_detector.ps1 -Demo
+          Output : security_events.csv
+
+  STEP 2  Run analyze_threats.py
+
+          Example: python analyze_threats.py
+          Output : threat_report.html
+                   threat_summary.json
+
+  STEP 3  Open threat_report.html in any browser to review findings.
+          Share threat_summary.json with SIEM / ticketing system.
+
+          If exit code 1: escalate HIGH-risk accounts to SOC analyst.
+          If exit code 0: log as routine sweep, archive reports.
