@@ -8,12 +8,8 @@ Reads the CSV produced by threat_detector.ps1 and generates:
 Optionally enriches the report with a live system snapshot (CPU / RAM)
 if the psutil library is available.
 
-Author : Keegan
+Students: Keegan Windley, Delaura Ohave
 Date   : April 2026
-
-Usage:
-  python analyze_threats.py
-  python analyze_threats.py path\\to\\custom_events.csv
 """
 
 from __future__ import annotations
